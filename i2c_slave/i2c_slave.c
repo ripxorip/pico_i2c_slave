@@ -16,9 +16,9 @@ typedef struct i2c_slave_t
 
 static i2c_slave_t i2c_slaves[2];
 
-static inline void finish_transfer(i2c_slave_t *slave) {
+static inline void finish_transfer(i2c_slave_t *slave, i2c_slave_event_t event) {
     if (slave->transfer_in_progress) {
-        slave->handler(slave->i2c, I2C_SLAVE_FINISH);
+        slave->handler(slave->i2c, event);
         slave->transfer_in_progress = false;
     }
 }
@@ -33,15 +33,15 @@ static void __not_in_flash_func(i2c_slave_irq_handler)(i2c_slave_t *slave) {
     }
     if (intr_stat & I2C_IC_INTR_STAT_R_TX_ABRT_BITS) {
         hw->clr_tx_abrt;
-        finish_transfer(slave);
+        finish_transfer(slave, I2C_SLAVE_FINISH_RESTART);
     }
     if (intr_stat & I2C_IC_INTR_STAT_R_START_DET_BITS) {
         hw->clr_start_det;
-        finish_transfer(slave);
+        finish_transfer(slave, I2C_SLAVE_FINISH_RESTART);
     }
     if (intr_stat & I2C_IC_INTR_STAT_R_STOP_DET_BITS) {
         hw->clr_stop_det;
-        finish_transfer(slave);
+        finish_transfer(slave, I2C_SLAVE_FINISH_STOP);
     }
     if (intr_stat & I2C_IC_INTR_STAT_R_RX_FULL_BITS) {
         slave->transfer_in_progress = true;
